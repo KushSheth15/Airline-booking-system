@@ -7,4 +7,12 @@ const router = express.Router();
 
 router.post('/',AirplaneMiddleware.validateCreateRequest, AirplaneController.createAirplane);
 
+router.get('/', AirplaneController.getAirplanes);
+
+router.get('/:id', AirplaneController.getAirplane);
+
+router.delete('/:id', AirplaneController.deleteAirplane);
+
+router.patch('/:id', AirplaneController.updateAirplane);
+
 module.exports = router;
