@@ -13,7 +13,9 @@ module.exports = {
         type: Sequelize.STRING
       },
       code: {
-        type: Sequelize.STRING
+        type: Sequelize.STRING,
+        allowNull: false,
+        unique: true
       },
       address: {
         type: Sequelize.STRING
