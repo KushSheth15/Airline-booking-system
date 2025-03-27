@@ -60,7 +60,21 @@ async function getAllFlights(query){
         throw new AppError('Cannot Fetch data of all flights',StatusCodes.INTERNAL_SERVER_ERROR);
     }
 }
+
+async function getFlight(id){
+    try {
+        const flight = await flightRepository.get(id);
+        return flight;
+    } catch (error) {
+        if(error.statusCode == StatusCodes.NOT_FOUND){
+            throw new AppError('flight not found!',error.statusCode);
+        }
+        throw new AppError('Cannot Fetch data of flight',StatusCodes.INTERNAL_SERVER_ERROR);
+    } 
+}
+
 module.exports = {
     createFlight,
-    getAllFlights
+    getAllFlights,
+    getFlight
 }
