@@ -45,6 +45,16 @@ function validateCreateRequest(req,res,next){
     next();
 }
 
+function validateUpdateSeatsRequest(req, res, next) {
+    if(!req.body?.seats){
+        ErrorResponse.message = 'Something Went wrong while seats';
+        ErrorResponse.error = {explanation:'seats is required. Something is wrong!'}
+        return res.status(StatusCodes.BAD_REQUEST).json(ErrorResponse);
+    }
+    next();
+}
+
 module.exports = {
-    validateCreateRequest
+    validateCreateRequest,
+    validateUpdateSeatsRequest
 };

@@ -1,6 +1,8 @@
-const {Sequelize} = require('sequelize');
+const { Sequelize } = require('sequelize');
 const CrudRepository = require('./crud-repository');
-const { Flight, Airplane , Airport} = require('../models');
+const { Flight, Airplane, Airport } = require('../models');
+const db = require('../models');
+const { addRowLockOnFlights } = require('./queries')
 
 class FlightRepository extends CrudRepository {
     constructor() {
@@ -15,35 +17,53 @@ class FlightRepository extends CrudRepository {
                 {
                     model: Airplane,
                     required: true,
-                    as:'airplaneDetail'
+                    as: 'airplaneDetail'
                 },
                 {
                     model: Airport,
                     required: true,
-                    as:'departureAirport',
-                    on:{
-                        col1:Sequelize.where(Sequelize.col("Flight.departureAirportId"),"=",Sequelize.col("departureAirport.code"))
+                    as: 'departureAirport',
+                    on: {
+                        col1: Sequelize.where(Sequelize.col("Flight.departureAirportId"), "=", Sequelize.col("departureAirport.code"))
                     },
-                    include:{
-                        model:City,
+                    include: {
+                        model: City,
                         required: true,
                     }
                 },
                 {
                     model: Airport,
                     required: true,
-                    as:'arrivalAirport',
-                    on:{
-                        col1:Sequelize.where(Sequelize.col("Flight.arrivalAirportId"),"=",Sequelize.col("arrivalAirport.code"))
+                    as: 'arrivalAirport',
+                    on: {
+                        col1: Sequelize.where(Sequelize.col("Flight.arrivalAirportId"), "=", Sequelize.col("arrivalAirport.code"))
                     },
-                    include:{
-                        model:City,
+                    include: {
+                        model: City,
                         required: true,
                     }
                 }
             ]
         });
         return response;
+    }
+
+    async updateRemainingSeats(flightId, seats, dec = true) {
+        const transaction = await db.sequelize.transaction();
+        try {
+            await db.sequelize.query(addRowLockOnFlights(flightId));
+            const flight = await Flight.findByPk(flightId);
+            if (parseInt(dec)) {
+                await flight.decrement('totalSeats', { by: seats }, { transaction: transaction });
+            } else {
+                await flight.increment('totalSeats', { by: seats }, { transaction: transaction });
+            }
+            await transaction.commit();
+            return flight;
+        } catch (error) {
+            await transaction.rollback();
+            throw error;
+        }
     }
 }
 
