@@ -46,6 +46,7 @@ function validateCreateRequest(req,res,next){
 }
 
 function validateUpdateSeatsRequest(req, res, next) {
+    console.log('Incoming Request Body:', req.body);
     if(!req.body?.seats){
         ErrorResponse.message = 'Something Went wrong while seats';
         ErrorResponse.error = {explanation:'seats is required. Something is wrong!'}
