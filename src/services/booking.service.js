@@ -4,6 +4,7 @@ const {BookingRepository} = require('../repositories');
 const db = require('../models');
 const AppError = require('../utils/errors/app-error');
 const { StatusCodes } = require('http-status-codes');
+const { data } = require('../utils/common/error-response');
 const {Enums} = require('../utils/common');
 const {BOOKED,CANCELLED,INITIATED,PENDING} = Enums.BOOKING_STATUS;
 
@@ -46,7 +47,7 @@ async function makePayment(data){
         const bookingTime = new Date(bookingDetails.createdAt);
         const currentTime = new Date();
         if(currentTime - bookingTime > 300000){
-            await bookingRepository.update(data.bookingId,{status:CANCELLED},transaction)
+            await cancelBooking(data.bookingId);
             throw new AppError('Payment time limit exceeded',StatusCodes.BAD_REQUEST);
         }
         if(bookingDetails.totalCost != data.totalCost){
@@ -63,7 +64,38 @@ async function makePayment(data){
     }
 }
 
+async function cancelBooking(bookingId){
+    const transaction = await db.sequelize.transaction();
+    try {
+        const bookingDetails = await bookingRepository.get(bookingId,transaction);
+        if(bookingDetails.status === CANCELLED){
+            await transaction.commit();
+            return true;
+        }
+        await axios.patch(`${ServerConfig.FLIGHT_SERVICE}/api/v1/flights/${bookingDetails.flightId}/seats`,{
+            seats:bookingDetails.noOfSeats,
+            dec:0
+        });
+        await bookingRepository.update(data.bookingId,{status:CANCELLED},transaction)
+        await transaction.commit();
+    } catch (error) {
+        await transaction.rollback();
+        throw error;
+    }
+}
+
+async function cancelOldBookings(){
+    try {
+        const time = new Date(Date.now() - 1000 * 300);
+        const response = await bookingRepository.cancelOldBookings(time);
+        return response;
+    } catch (error) {
+        console.log(error);
+    }
+}
+
 module.exports = {
     createBooking,
-    makePayment
+    makePayment,
+    cancelOldBookings
 }

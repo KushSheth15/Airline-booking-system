@@ -27,6 +27,17 @@ class BookingRepository extends CrudRepository {
         },{transaction:transaction});
         return response
     }
+
+    async cancelOldBookings(timestamp){
+        const response = await Booking.find({
+            where:{
+                createdAt:{
+                    [Op.gt]:timestamp
+                },
+            }
+        });
+        return response;
+    }
 }
 
 module.exports = BookingRepository;
